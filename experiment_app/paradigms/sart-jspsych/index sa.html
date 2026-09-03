@@ -1,0 +1,716 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <title>SART - 认知评估</title>
+
+  <!-- 按你当前截图里的 lib 结构引用 -->
+  <link rel="stylesheet" href="/lib/jspsych8/jspsych.css">
+  <link rel="stylesheet" href="/lib/jspsych8/common.css">
+
+  <style>
+    :root {
+      --sart-yellow: #F8EC01;
+      --font: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+      --error: #F44336;
+      --success: #4CAF50;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000000 !important;
+      color: #FFFFFF !important;
+      font-family: var(--font);
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .jspsych-display-element {
+      background: #000000 !important;
+      color: #FFFFFF !important;
+    }
+
+    .jspsych-content-wrapper {
+      background: #000000 !important;
+      color: #FFFFFF !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      min-height: 100vh !important;
+    }
+
+    .jspsych-content {
+      background: #000000 !important;
+      color: #FFFFFF !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 100% !important;
+      min-height: 100vh !important;
+    }
+
+    /* 数字刺激 */
+    .sart-digit {
+      position: fixed;
+      left: var(--sart-x, 50%);
+      top: var(--sart-y, 50%);
+      transform: translate(-50%, -50%);
+      font-family: "Courier New", monospace;
+      font-size: 20vh;
+      font-weight: bold;
+      color: var(--sart-digit-color, #FFFFFF);
+      line-height: 1;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* 中央 mask */
+    .sart-mask {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 18vh;
+      height: 18vh;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .sart-blank {
+      height: 100vh;
+      background: #000000;
+    }
+
+    /* jsPsych 默认按钮区放到底部 */
+    #jspsych-html-button-response-btngroup {
+      position: fixed !important;
+      bottom: 40px !important;
+      left: 0 !important;
+      right: 0 !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      gap: 16px !important;
+      z-index: 70 !important;
+      background: transparent !important;
+    }
+
+    .jspsych-btn {
+      background: #B0B0B0 !important;
+      color: #1A1A1A !important;
+      border: 2px solid #707070 !important;
+      border-radius: 12px !important;
+      min-width: 220px !important;
+      min-height: 84px !important;
+      padding: 14px 36px !important;
+      font-size: 34px !important;
+      font-weight: 600 !important;
+      font-family: var(--font) !important;
+      cursor: pointer !important;
+      box-shadow: 0 2px 6px rgba(255,255,255,0.15) !important;
+      touch-action: manipulation !important;
+    }
+
+    .jspsych-btn:hover {
+      background: #C0C0C0 !important;
+    }
+
+    .jspsych-btn:active {
+      background: #8C8C8C !important;
+      transform: scale(0.98);
+    }
+
+    /* 持久点击按钮，小一些 */
+    #sart-persistent-btn-wrap {
+      position: fixed;
+      bottom: 40px;
+      left: 0;
+      right: 0;
+      display: none;
+      justify-content: center;
+      z-index: 50;
+      background: transparent !important;
+    }
+
+    .sart-tap-btn {
+      width: 32vw;
+      min-width: 220px;
+      max-width: 420px;
+      min-height: 84px;
+      padding: 14px 36px;
+      border-radius: 12px;
+      background: #B0B0B0;
+      border: 2px solid #707070;
+      color: #1A1A1A;
+      font-size: 36px;
+      font-family: var(--font);
+      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(255,255,255,0.15);
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .sart-tap-btn:active {
+      background: #8C8C8C;
+      transform: scale(0.98);
+    }
+
+    .sart-feedback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 70vh;
+      font-size: 96px;
+      font-weight: 900;
+      background: #000000 !important;
+      letter-spacing: 4px;
+      text-align: center;
+    }
+
+    .sart-feedback.error {
+      color: var(--error);
+    }
+
+    .sart-feedback.correct {
+      color: var(--success);
+    }
+
+    /* 练习反馈：sart.js 实际使用的是 practice-feedback，不是 sart-feedback */
+    .practice-feedback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 70vh;
+      width: 100vw;
+      background: #000000 !important;
+      font-size: 96px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-align: center;
+      font-family: var(--font);
+    }
+
+    .practice-feedback.correct {
+      color: #4CAF50;
+    }
+
+    .practice-feedback.incorrect {
+      color: #F44336;
+    }
+
+    .practice-feedback.no-press {
+      font-size: 108px;
+      font-weight: 900;
+      letter-spacing: 2px;
+    }
+
+    /* 指导语页面，全黑 */
+    .sart-instr-page {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #000000 !important;
+      color: #FFFFFF !important;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 40px 140px;
+      text-align: center;
+      z-index: 60;
+      overflow-y: auto;
+    }
+
+    .sart-instr-title {
+      font-size: 52px;
+      font-weight: 700;
+      color: #FFFFFF !important;
+      margin-bottom: 24px;
+      line-height: 1.3;
+    }
+
+    .sart-instr-body {
+      font-size: 36px;
+      color: #FFFFFF !important;
+      line-height: 1.8;
+      max-width: 860px;
+    }
+
+    .sart-instr-hint {
+      margin-top: 28px;
+      font-size: 22px;
+      color: #BBBBBB !important;
+    }
+
+    .sart-instr-btn {
+      font-family: var(--font) !important;
+      font-size: 34px !important;
+      min-height: 84px;
+      min-width: 220px;
+      padding: 14px 36px;
+      border: 2px solid #707070;
+      border-radius: 12px;
+      background: #B0B0B0;
+      color: #1A1A1A;
+      font-weight: 600;
+      cursor: pointer;
+      touch-action: manipulation;
+      box-shadow: 0 2px 6px rgba(255,255,255,0.15);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .sart-instr-btn:hover {
+      background: #C0C0C0;
+    }
+
+    .sart-instr-btn:active {
+      background: #8C8C8C;
+      transform: scale(0.98);
+    }
+
+    /* Go / No-Go 示例卡片，改成黑底风格 */
+    .sart-demo-row {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      margin: 20px 0 12px;
+      flex-wrap: wrap;
+    }
+
+    .sart-demo-card {
+      width: 280px;
+      padding: 20px 20px 18px;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(255,255,255,0.10);
+    }
+
+    .sart-demo-card.go-card {
+      background: #061806;
+      border: 3px solid #4CAF50;
+    }
+
+    .sart-demo-card.nogo-card {
+      background: #1A0606;
+      border: 3px solid #F44336;
+    }
+
+    .sart-demo-digit {
+      font-family: "Courier New", monospace;
+      font-size: 80px;
+      font-weight: bold;
+      line-height: 1.1;
+    }
+
+    .sart-demo-card.go-card .sart-demo-digit {
+      color: #FFFFFF;
+    }
+
+    .sart-demo-card.nogo-card .sart-demo-digit {
+      color: #F44336;
+    }
+
+    .sart-demo-label {
+      font-size: 34px;
+      font-weight: bold;
+      margin-top: 12px;
+    }
+
+    .sart-demo-card.go-card .sart-demo-label {
+      color: #66DD66;
+    }
+
+    .sart-demo-card.nogo-card .sart-demo-label {
+      color: #FF6666;
+    }
+
+    .sart-rule-box {
+      margin: 8px auto;
+      padding: 14px 32px;
+      border-radius: 16px;
+      max-width: 700px;
+      font-size: 34px;
+      font-weight: bold;
+      line-height: 1.5;
+    }
+
+    .sart-rule-box.nogo-rule {
+      background: #1A0606;
+      border: 2px solid #F44336;
+      color: #FF6666;
+    }
+
+    .sart-rule-box.go-rule {
+      background: #061806;
+      border: 2px solid #4CAF50;
+      color: #66DD66;
+    }
+
+    .sart-nogo-big {
+      font-family: "Courier New", monospace;
+      font-size: 96px;
+      font-weight: bold;
+      color: #F44336;
+      line-height: 1;
+      margin: 4px 0;
+      text-shadow: 0 2px 12px rgba(244,67,54,0.25);
+    }
+
+    .sart-nogo-badge {
+      display: inline-block;
+      background: #F44336;
+      color: #FFFFFF;
+      font-size: 28px;
+      font-weight: bold;
+      padding: 8px 28px;
+      border-radius: 40px;
+      margin-top: 4px;
+    }
+
+    .instruction-page {
+      color: #FFFFFF !important;
+      background: #000000 !important;
+      height: auto;
+      min-height: 0;
+      padding-bottom: 72px;
+    }
+
+    .instruction-title {
+      color: #FFFFFF !important;
+    }
+
+    .instruction-body {
+      color: #CCCCCC !important;
+    }
+
+    /* 注意力评分界面 */
+    .rating-container {
+      text-align: center;
+      background: #000000 !important;
+      color: #FFFFFF !important;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100vw;
+    }
+
+    .rating-container h2,
+    .rating-container p {
+      color: #FFFFFF !important;
+    }
+
+    .rating-buttons {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .rating-btn {
+      width: 74px;
+      height: 74px;
+      font-size: 30px;
+      font-weight: bold;
+      border: 2px solid #334155;
+      border-radius: 12px;
+      background: #1e293b;
+      color: #f8fafc;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.15s;
+      font-family: var(--font);
+      box-shadow: 0 2px 8px rgba(255,255,255,0.06);
+    }
+
+    .rating-btn:active,
+    .rating-btn.selected {
+      background: #1565C0;
+      color: white;
+      border-color: #1565C0;
+      box-shadow: 0 2px 12px rgba(26,140,255,0.3);
+    }
+
+
+    /* 注视点：每题前 500ms，固定正中间 */
+    .sart-fixation {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      color: #FFFFFF;
+      font-family: Arial, sans-serif;
+      font-size: 8vh;
+      font-weight: 600;
+      line-height: 1;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    /* 统一指导语：三张图同屏 + 红框 + 明暗标注 */
+    .sart-guide-overlay {
+      position: fixed;
+      inset: 0;
+      background: #000000;
+      color: #FFFFFF;
+      z-index: 5000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 40px 34px;
+      font-family: var(--font);
+      box-sizing: border-box;
+    }
+
+    .sart-guide-header { width: min(1400px, 94vw); display: grid; grid-template-columns: 180px 1fr 180px; align-items: center; margin-bottom: 22px; }
+
+    .sart-guide-title { grid-column: 2; justify-self: center; text-align: center; color: #4DA3FF; font-size: clamp(28px, 3vw, 42px); font-weight: 800; letter-spacing: 2px; }
+
+    .sart-guide-prev { grid-column: 1; justify-self: start; padding: 12px 34px; border: none; border-radius: 10px; background: #64748b; color: #FFFFFF; font-size: clamp(20px, 2.2vw, 30px); font-weight: 800; cursor: pointer; touch-action: manipulation; }
+
+    .sart-guide-prev:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .sart-guide-next { grid-column: 3; justify-self: end;
+      padding: 12px 34px;
+      border: none;
+      border-radius: 10px;
+      background: #4DA3FF;
+      color: #FFFFFF;
+      font-size: clamp(20px, 2.2vw, 30px);
+      font-weight: 800;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .sart-guide-next.final {
+      background: #FF9800;
+    }
+
+    .sart-guide-images {
+      position: relative;
+      width: min(1400px, 94vw);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 26px;
+      margin-bottom: 30px;
+    }
+
+    .sart-guide-card {
+      flex: 1 1 0;
+      min-width: 0;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: #080808;
+      transition: opacity 0.25s ease, transform 0.25s ease, filter 0.25s ease, border-color 0.25s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .sart-guide-card img {
+      display: block;
+      max-width: 100%;
+      max-height: 42vh;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.65);
+      background: #000;
+    }
+
+    .sart-guide-card.dim {
+      opacity: 0.32;
+      filter: grayscale(0.45) brightness(0.68);
+      transform: scale(0.96);
+    }
+
+    .sart-guide-card.active {
+      opacity: 1;
+      filter: none;
+      transform: scale(1.04);
+      border-color: rgba(77,163,255,0.60);
+    }
+
+    .sart-guide-redbox {
+      position: absolute;
+      display: none;
+      border: 4px solid #FF3366;
+      border-radius: 18px;
+      pointer-events: none;
+      z-index: 10;
+      box-shadow: 0 0 26px rgba(255, 51, 102, 0.55);
+      transition: left 0.25s ease, top 0.25s ease, width 0.25s ease, height 0.25s ease;
+      box-sizing: border-box;
+    }
+
+    .sart-guide-subtitle {
+      width: min(1200px, 90vw);
+      min-height: 120px;
+      border: 1px solid rgba(77,163,255,0.36);
+      border-radius: 14px;
+      background: #050505;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 34px;
+      box-sizing: border-box;
+    }
+
+    #sart-guide-text {
+      color: #FFFFFF;
+      font-size: clamp(24px, 3vw, 36px);
+      font-weight: 600;
+      line-height: 1.65;
+      text-align: center;
+      transition: opacity 0.15s ease;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div id="jspsych-target"></div>
+
+  <div id="sart-persistent-btn-wrap">
+    <button class="sart-tap-btn" id="sart-persistent-btn">点击</button>
+  </div>
+
+  <!-- 按 experiment_v4 的真实目录加载核心包：lib/jspsych8/ -->
+  <script src="/lib/jspsych8/jspsych.js"></script>
+  <script src="/lib/jspsych8/plugin-html-button-response.js"></script>
+  <script src="/lib/jspsych8/plugin-html-keyboard-response.js"></script>
+  <script src="/lib/jspsych8/plugin-preload.js"></script>
+  <script src="/lib/jspsych8/attention-probe.js"></script>
+  <script src="/lib/jspsych8/touch-hardening.js"></script>
+  <script src="/lib/jspsych8/voice-guide.js"></script>
+
+  <!-- experiment_v4 中没有 call-function / safeFetch / end-screen / camera 包，这里只补兼容，不替代上面的核心 jsPsych 包 -->
+  <script>
+    /* jsPsych v8 call-function 插件兜底：sart.js 会用到 jsPsychCallFunction */
+    if (typeof jsPsychCallFunction === "undefined") {
+      class JsPsychCallFunctionPlugin {
+        constructor(jsPsychInstance) {
+          this.jsPsych = jsPsychInstance;
+        }
+
+        trial(display_element, trial) {
+          display_element.innerHTML = "";
+
+          if (trial.async) {
+            trial.func(() => {
+              this.jsPsych.finishTrial({});
+            });
+          } else {
+            let value = null;
+            if (typeof trial.func === "function") {
+              value = trial.func();
+            }
+            this.jsPsych.finishTrial({ value: value });
+          }
+        }
+      }
+
+      JsPsychCallFunctionPlugin.info = {
+        name: "call-function",
+        parameters: {
+          func: {
+            type: jsPsychModule.ParameterType.FUNCTION,
+            default: undefined
+          },
+          async: {
+            type: jsPsychModule.ParameterType.BOOL,
+            default: false
+          }
+        }
+      };
+
+      var jsPsychCallFunction = JsPsychCallFunctionPlugin;
+    }
+
+    /* safeFetch 兜底 */
+    if (typeof safeFetch === "undefined") {
+      window.safeFetch = function(url, options) {
+        return fetch(url, options);
+      };
+    }
+
+    /* LocalPack 兜底：没有 vault/jszip 时，不阻断实验 */
+    if (typeof LocalPack === "undefined") {
+      window.LocalPack = {
+        files: [],
+        add: function(filename, content) {
+          this.files.push({ filename: filename, content: content });
+          try {
+            localStorage.setItem("LocalPack_" + filename, content);
+          } catch (e) {}
+        }
+      };
+    }
+
+    /* 摄像头对象兜底：当前 experiment_v4 未提供 paradigm-camera.js 时不报错 */
+    if (typeof ParadigmCamera === "undefined") {
+      window.ParadigmCamera = {
+        init: function() { return Promise.resolve(); },
+        isRecording: function() { return false; },
+        addEvent: function() {},
+        start: function() { return Promise.resolve(); },
+        stop: function() { return Promise.resolve(null); },
+        stopAndSave: function() { return Promise.resolve(null); }
+      };
+    }
+
+    /* 结束页兜底 */
+    if (typeof showEndScreen === "undefined") {
+      window.showEndScreen = function(paradigm, subjectId) {
+        var root = document.getElementById("jspsych-target") || document.body;
+
+        root.innerHTML = `
+          <div style="
+            min-height:100vh;
+            background:#000;
+            color:#fff;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            font-family:Microsoft YaHei, PingFang SC, Arial, sans-serif;
+            text-align:center;
+          ">
+            <h1 style="font-size:42px;margin-bottom:20px;">SART 任务完成</h1>
+            <p style="font-size:24px;color:#ccc;">被试编号：${subjectId || ""}</p>
+            <p style="font-size:20px;color:#888;margin-top:30px;">
+              如果你是在主控台中运行，请返回主控台继续后续流程。
+            </p>
+          </div>
+        `;
+      };
+    }
+  </script>
+
+  <!-- SART 三文件：sequence 必须在 sart.js 前面 -->
+  <script src="./sart_sequence.js?v=20260615_v3"></script>
+  <script src="./sart.js?v=20260624-corsi-flanker-sart-safe-only"></script>
+</body>
+</html>
+

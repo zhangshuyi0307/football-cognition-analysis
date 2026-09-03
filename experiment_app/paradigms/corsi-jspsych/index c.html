@@ -1,0 +1,48 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>方块记忆 - Corsi Block-Tapping Task</title>
+    <style>
+        * { user-select: none; touch-action: manipulation; box-sizing: border-box; caret-color: transparent !important; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', "Microsoft YaHei", sans-serif; background: #0f172a; color: white; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        canvas { display: block; }
+        #unified-instruction-overlay { position: fixed; inset: 0; background: #111; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 40px; }
+        .header-area { width: 100%; max-width: 1200px; display: grid; grid-template-columns: 180px 1fr 180px; align-items: center; margin-bottom: 20px; }
+        .instruction-header { grid-column: 2; justify-self: center; text-align: center; font-size: 2rem; font-weight: bold; color: #4DA3FF; letter-spacing: 2px; margin: 0; }
+        .guide-nav-btn { padding: 12px 32px; font-size: 1.4rem; font-weight: bold; color: white; border: none; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+        .guide-prev-btn { grid-column: 1; justify-self: start; background: #64748b; }
+        .guide-next-btn { grid-column: 3; justify-self: end; background: #4DA3FF; }
+        .guide-prev-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .next-step-btn { padding: 12px 32px; font-size: 1.4rem; font-weight: bold; color: white; border: none; border-radius: 10px; cursor: pointer; transition: 0.2s; background: #4DA3FF; }
+        .images-row { display: flex; justify-content: center; align-items: center; gap: 30px; width: 100%; max-width: 1400px; margin-bottom: 40px; position: relative; }
+        .guide-img-wrapper { padding: 15px; border-radius: 12px; background: #222; transition: opacity 0.4s, transform 0.4s; opacity: 0.3; flex: 1; display: flex; justify-content: center;}
+        .guide-img-wrapper.active { opacity: 1; transform: scale(1.05); background: #2a2a2a; }
+        .guide-img-wrapper img { max-height: 40vh; width: auto; max-width: 100%; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.6); display: block; }
+        #dynamic-red-box { position: absolute; border: 4px solid #FF3366; border-radius: 16px; pointer-events: none; transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 0 25px rgba(255, 51, 102, 0.5); display: none; z-index: 10; }
+        .subtitle-container { width: 100%; max-width: 1400px; background: #1a1a1a; border: 2px solid #333; border-radius: 15px; padding: 25px 40px; min-height: 140px; display: flex; align-items: center; justify-content: center; text-align: center; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
+        .subtitle-text { font-size: 1.6rem; line-height: 1.6; color: #eee; margin: 0; transition: opacity 0.3s; }
+        .simple-overlay { position: fixed; inset: 0; background: #000; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px; }
+        #center-text-overlay { position: fixed; top: 6vh; left: 0; right: 0; pointer-events: none; display: flex; justify-content: center; align-items: flex-start; text-align: center; font-size: 3rem; font-weight: bold; color: white; text-shadow: 0 0 15px rgba(0,0,0,0.8); z-index: 100; opacity: 0; transition: opacity 0.3s; }
+    </style>
+</head>
+<body>
+    <div id="unified-instruction-overlay" style="display:none;">
+        <div class="header-area"><button class="guide-nav-btn guide-prev-btn" id="guide-prev-btn" type="button">上一步</button><div class="instruction-header">【方块记忆】</div><button class="guide-nav-btn guide-next-btn next-step-btn" id="guide-next-btn" type="button">下一步</button></div>
+        <div class="images-row" id="instruction-content">
+            <div id="dynamic-red-box"></div>
+            <div class="guide-img-wrapper" id="img-target-1"><img src="./instructions/corsi_rule1.png" onerror="this.style.display='none'"></div>
+            <div class="guide-img-wrapper" id="img-target-2"><img src="./instructions/corsi_rule2.png" onerror="this.style.display='none'"></div>
+        </div>
+        <div class="subtitle-container"><p class="subtitle-text" id="subtitle-text"></p></div>
+    </div>
+    <div id="center-text-overlay"></div>
+    <div id="app" style="width:100%; height:100%; display:none; flex-direction:column; justify-content:center; align-items:center;">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+<script src="./corsi_sequence.js"></script>
+<script src="./corsi.js?v=20260624-corsi-flanker-sart-safe-only"></script>
+</body>
+</html>
+

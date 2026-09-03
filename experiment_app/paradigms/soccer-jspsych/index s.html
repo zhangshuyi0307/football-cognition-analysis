@@ -1,0 +1,74 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>足球战术决策测试</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; caret-color: transparent !important; }
+        body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: #000; color: #fff; overflow: hidden; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        .screen { display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; position: relative; padding: 2vh 2vw; }
+        .active { display: flex; }
+        .center-text { text-align: center; font-size: 32px; line-height: 1.8; max-width: 80%; }
+        .vertical-layout { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80%; width: 100%; gap: 30px; }
+        .large-image { max-width: 90%; max-height: 40vh; border-radius: 8px; border: 2px solid #555; object-fit: contain; }
+        .grid-images { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid-images img { max-width: 100%; max-height: 30vh; border-radius: 6px; border: 1px solid #333; }
+        .text-area { font-size: 26px; text-align: center; max-width: 90%; line-height: 1.6; color: #ccc; }
+        .click-hint { position: absolute; bottom: 118px; font-size: 1.2rem; color: #ccc; font-weight: bold; pointer-events: none; }
+        #countdown-text { font-size: 150px; font-weight: bold; color: #fff; text-shadow: 0 0 20px #0f3689; }
+        video { width: 85%; max-height: 75vh; border-radius: 12px; border: 3px solid #555; box-shadow: 0 8px 25px rgba(255,255,255,0.1); background: #000; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 22px; width: 92%; max-width: 1120px; margin-top: 10px; align-items: stretch; }
+        .option-item-wrapper { width: 100%; cursor: pointer; border: 5px solid #333; border-radius: 15px; background: #000; transition: 0.2s; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+        .option-item-wrapper:hover { border-color: red; transform: scale(1.02); box-shadow: 0 10px 25px rgba(255,0,0,0.3); z-index: 10; }
+        .option-img { width: 100%; height: 23vh; object-fit: contain; background: #000; flex: 1 1 auto; min-height: 0; }
+        .option-text { background: #555; color: #fff; text-align: center; padding: 10px 12px; min-height: 58px; font-size: clamp(16px, 2.1vh, 22px); line-height: 1.25; font-weight: bold; border-top: 2px solid #222; display: flex; align-items: center; justify-content: center; white-space: normal; word-break: break-word; }
+        .rating-overlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .rating-num { width: 75px; height: 75px; background: #1e293b; color: #f8fafc; font-size: 28px; font-weight: bold; border-radius: 15px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #334155; transition: 0.1s; box-sizing: border-box; user-select: none; }
+        .soccer-guide-nav { position: fixed; left: 8vw; right: 8vw; bottom: 30px; z-index: 9000; display: none; justify-content: space-between; align-items: center; pointer-events: none; }
+        .soccer-guide-btn { pointer-events: auto; padding: 14px 42px; font-size: 1.5rem; font-weight: bold; color: white; border: none; border-radius: 12px; cursor: pointer; transition: 0.2s; }
+        #soccer-prev-btn { background: #64748b; }
+        #soccer-next-btn { background: #0f3689; }
+        #soccer-prev-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .manual-play-btn { position: fixed; left: 50%; bottom: 50px; transform: translateX(-50%); z-index: 9999; padding: 16px 56px; font-size: 28px; font-weight: bold; border: none; border-radius: 12px; background: #0f3689; color: white; cursor: pointer; }
+        .video-error-box { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 40px; color: white; font-size: 22px; line-height: 1.8; text-align: left; }
+        .video-error-inner { max-width: 1000px; background: #111827; border: 2px solid #ef4444; border-radius: 16px; padding: 30px; }
+    </style>
+</head>
+<body>
+
+<div id="app" style="width: 100%; height: 100%;">
+    <div class="screen instruction-screen" id="inst-1"><div class="center-text"><p>尊敬的参与者，您即将开始一项足球战术的测试。</p></div><div class="click-hint"></div></div>
+    <div class="screen instruction-screen" id="inst-2"><div class="center-text"><p>首先，你将看到 3 个练习任务，帮助你熟悉任务流程。</p><p>练习任务结束后，我们将正式开始测试。</p></div><div class="click-hint"></div></div>
+    <div class="screen instruction-screen" id="inst-3"><div class="vertical-layout"><img src="https://zd-oldman.oss-cn-hangzhou.aliyuncs.com/assets/football-cognition/paradigms/soccer-jspsych/guide.png" class="large-image" onerror="this.style.display='none'"><div class="text-area"><p>在每个任务开始前，会有一个<strong style="color:red">红点</strong>标出球的位置，<br>而一个<strong style="color:red">红圈</strong>则会标出你需要关注的球员所在位置。</p></div></div><div class="click-hint"></div></div>
+    <div class="screen instruction-screen" id="inst-new"><div class="vertical-layout"><img src="https://zju-football-cognition-assets.oss-cn-hangzhou.aliyuncs.com/football-cognition/soccer/tactic_set_1/defensive_/trial_1/trial_1.jpg" class="large-image" onerror="this.style.display='none'"><div class="text-area"><p>观察图片中的<span style="color:red">战术位置</span>和球员标记。</p></div></div><div class="click-hint"></div></div>
+    <div class="screen instruction-screen" id="inst-4"><div class="vertical-layout"><div class="grid-images"><img src="https://zju-football-cognition-assets.oss-cn-hangzhou.aliyuncs.com/football-cognition/soccer/option_1.png" onerror="this.style.display='none'"><img src="https://zju-football-cognition-assets.oss-cn-hangzhou.aliyuncs.com/football-cognition/soccer/option_2.png" onerror="this.style.display='none'"><img src="https://zju-football-cognition-assets.oss-cn-hangzhou.aliyuncs.com/football-cognition/soccer/option_3.png" onerror="this.style.display='none'"><img src="https://zju-football-cognition-assets.oss-cn-hangzhou.aliyuncs.com/football-cognition/soccer/option_4.png" onerror="this.style.display='none'"></div><div class="text-area"><p>每个视频结束后，屏幕上会出现 4 个选项。<br>箭头描述了你所观察球员的移动轨迹。无箭头则表示保持不动。</p></div></div><div class="click-hint"></div></div>
+    <div class="screen instruction-screen" id="inst-5"><div class="center-text" style="text-align: left; display: inline-block;"><p><strong>你需要做到：</strong></p><p>1. 选出该回合的最佳方案</p><p>2. 尽可能快速作答。</p><p style="color: red; margin-top: 40px; font-size: 26px; font-weight:bold;">提示：你的最终得分将根据答案正确性和反应速度综合评定。</p></div><div class="click-hint"></div></div>
+    <div class="screen instruction-screen" id="inst-6"><div class="center-text"><p style="font-size: 40px; font-weight: bold; color: red;">让我们开始 3 个练习任务</p></div><div class="click-hint">请点击右下角【开始练习】</div></div>
+    <div class="screen instruction-screen" id="inst-after-p1"><div class="vertical-layout"><p style="color: red; font-size: 36px; font-weight: bold; margin-bottom: 20px;">没有箭头就代表不动</p><div class="option-item-wrapper" style="max-width: 450px; cursor: default; pointer-events: none;"><img id="special-d-img" class="option-img"><div class="option-text" id="special-d-text">保持不动</div></div></div><div class="click-hint">请点击右下角【继续练习】</div></div>
+    <div class="screen instruction-screen" id="inst-practice-end"><div class="center-text"><p style="font-size: 40px; font-weight: bold; color: #2e7d32;">练习结束！</p><p style="margin-top:20px;">接下来将开始第一阶段正式测试。</p></div><div class="click-hint">请点击右下角【正式开始】</div></div>
+    <div class="screen instruction-screen" id="b2-start"><div class="center-text"><p style="font-size: 40px; font-weight: bold; color: red;">欢迎回到足球战术测试</p><p style="margin-top:20px;">接下来将开始第二阶段正式测试。</p><p style="margin-top:35px; font-size:30px; color:#ccc;">请认真观看每段足球视频，判断指定球员接下来<span style="color:#d32f2f;font-weight:900;">最合适的行动</span>。</p><p style="margin-top:14px; font-size:28px; color:#aaa;">请在保证准确的基础上尽快作答。</p></div><div class="click-hint">请点击右下角【正式开始】</div></div>
+
+    <div id="screen-countdown" class="screen"><div id="countdown-text">3</div></div>
+    <div class="screen" id="screen-video"><video id="task-video" playsinline webkit-playsinline preload="auto"></video></div>
+
+    <div class="screen" id="screen-options">
+        <p style="font-size:28px; margin-bottom:15px; font-weight:bold; color:red;">这名指定球员应该怎么做？</p>
+        <div class="options-grid">
+            <div class="option-item-wrapper" onclick="submitAnswer('A')"><img class="option-img" id="opt-a"><div class="option-text" id="text-a"></div></div>
+            <div class="option-item-wrapper" onclick="submitAnswer('B')"><img class="option-img" id="opt-b"><div class="option-text" id="text-b"></div></div>
+            <div class="option-item-wrapper" onclick="submitAnswer('C')"><img class="option-img" id="opt-c"><div class="option-text" id="text-c"></div></div>
+            <div class="option-item-wrapper" onclick="submitAnswer('D')"><img class="option-img" id="opt-d"><div class="option-text" id="text-d"></div></div>
+        </div>
+    </div>
+</div>
+
+<div id="soccer-guide-nav" class="soccer-guide-nav">
+    <button id="soccer-prev-btn" class="soccer-guide-btn" type="button">上一步</button>
+    <button id="soccer-next-btn" class="soccer-guide-btn" type="button">下一步</button>
+</div>
+
+<script src="./soccer_sequence.js?v=20260611-delay4-safe"></script>
+<script src="./soccer.js?v=20260611-clean-rewrite"></script>
+</body>
+</html>

@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>浙江大学 - 足球战术与认知综合评估系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.3/dist/index.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; caret-color: transparent !important; }
+        /* 强制全屏，彻底杜绝滚动条 */
+        body, html { height: 100vh; width: 100vw; overflow: hidden; background: #f0f4f8; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
+        
+        #login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; color: white; }
+        .login-box { background: #fff; border-radius: 2vh; padding: 4vh; width: 40vw; min-width: 400px; text-align: center; color: #333; box-shadow: 0 1vh 3vh rgba(0,0,0,0.5); }
+        .login-box input { width: 100%; padding: 1.5vh; margin: 1vh 0; border: 0.2vh solid #ddd; border-radius: 1vh; font-size: 2vh; }
+        .login-box h4 { text-align: left; margin: 1.5vh 0 0.5vh 0; color: #555; font-size: 1.8vh;}
+        #preview-video { width: 100%; border-radius: 1vh; background: #000; transform: scaleX(-1); margin: 1vh 0; border: 0.3vh solid #0f3689; }
+        
+        #main-ui { display: none; height: 100vh; flex-direction: column; }
+        
+        /* 顶部导航栏占 8% 高度 */
+        .header { height: 8vh; display: flex; justify-content: space-between; align-items: center; padding: 0 3vw; border-bottom: 0.3vh solid #0f3689; background: #fff; box-shadow: 0 0.2vh 1vh rgba(0,0,0,0.05); z-index: 10;}
+        .header-title { color: #0f3689; font-size: 2.5vh; }
+        .header-logo { height: 5vh; }
+        .header-tag { background-color: #0f3689; color: white; padding: 0.5vh 1vw; border-radius: 0.8vh; font-size: 1.5vh; font-weight: bold; }
+        
+        #download-btn { padding: 1.2vh 2vw; background: #2e7d32; color: #fff; border: none; border-radius: 1vh; cursor: pointer; font-weight: bold; font-size: 1.8vh; transition: 0.2s; box-shadow: 0 0.4vh 0.6vh rgba(46,125,50,0.3);}
+        #download-btn:hover { background: #1b5e20; transform: scale(1.05); }
+        #user-display { font-weight: bold; color: #333; font-size: 1.8vh; padding: 1vh 1.5vw; background: #e2e8f0; border-radius: 2vh; }
+
+        /* 主体内容区占 92% 高度 */
+        .content-area { flex: 1; display: grid; grid-template-columns: 5fr 5fr; gap: 3vw; padding: 3vh 3vw; height: 92vh; }
+        
+        .module-col { background: #fff; border-radius: 2vh; padding: 3vh 3vw; display: flex; flex-direction: column; gap: 2vh; box-shadow: 0 0.4vh 1.5vh rgba(0,0,0,0.05); border: 0.1vh solid #d1d9e6; height: 100%; }
+        .module-title { font-weight: bold; color: #0f3689; border-left: 0.6vh solid #0f3689; padding-left: 1vw; font-size: 2.8vh; margin-bottom: 1vh; }
+        
+        /* 静息态与运动阶段：任务面板式布局 */
+        .module-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 2vw;
+            margin-bottom: 1vh;
+        }
+
+        .module-title-wrap { min-width: 0; }
+
+        .module-subtitle {
+            margin-top: 0.9vh;
+            color: #667085;
+            font-size: 1.9vh;
+            line-height: 1.55;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .module-chip {
+            flex: 0 0 auto;
+            background: #eaf2ff;
+            color: #0f3689;
+            border: 0.18vh solid #cfe0ff;
+            border-radius: 999px;
+            padding: 0.9vh 1.2vw;
+            font-size: 1.7vh;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .rest-progress,
+        .fusion-progress {
+            position: relative;
+            display: grid;
+            gap: 0.8vw;
+            align-items: center;
+            padding: 1.4vh 1.2vw;
+            background: #f6f8fb;
+            border: 0.1vh solid #d9e2f2;
+            border-radius: 1.6vh;
+            margin-bottom: 1.4vh;
+        }
+
+        .rest-progress,
+        .fusion-progress { grid-template-columns: repeat(6, 1fr); }
+
+        .rest-progress::before,
+        .fusion-progress::before {
+            content: "";
+            position: absolute;
+            left: 7%;
+            right: 7%;
+            top: 50%;
+            height: 0.28vh;
+            background: #d7e3f7;
+            transform: translateY(-50%);
+            z-index: 0;
+        }
+
+        .progress-step {
+            position: relative;
+            z-index: 1;
+            justify-self: center;
+            width: 4.4vh;
+            height: 4.4vh;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            border: 0.25vh solid #0f3689;
+            color: #0f3689;
+            font-size: 1.65vh;
+            font-weight: 900;
+            box-shadow: 0 0.3vh 0.8vh rgba(15,54,137,0.12);
+        }
+
+        .sub-btn-grid,
+        .fusion-stage-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-rows: repeat(2, minmax(0, 1fr));
+            gap: 2vh 1.6vw;
+            flex: 1;
+            align-items: stretch;
+            min-height: 0;
+        }
+
+        .start-btn,
+        .fusion-stage-card {
+            position: relative;
+            min-height: 19vh;
+            border: 0.25vh solid #e2e8f0;
+            border-radius: 2.2vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: 0.2s;
+            background: #ffffff;
+            padding: 2.1vh 1.5vw;
+            text-align: left;
+            overflow: hidden;
+        }
+
+        .start-btn::after,
+        .fusion-stage-card::after {
+            content: "";
+            position: absolute;
+            inset: auto -10% -35% auto;
+            width: 13vh;
+            height: 13vh;
+            border-radius: 50%;
+            background: rgba(15,54,137,0.055);
+            pointer-events: none;
+        }
+
+        .start-btn:hover,
+        .fusion-stage-card:hover {
+            border-color: #0f3689;
+            background: #f8fbff;
+            transform: translateY(-0.45vh);
+            box-shadow: 0 1.2vh 2.4vh rgba(15,54,137,0.12);
+        }
+
+        .start-btn.finished,
+        .fusion-stage-card.finished {
+            opacity: 0.92;
+            background: #f0fdf4;
+            border-color: #2e7d32;
+        }
+
+        .fusion-stage-card.active {
+            border-color:#f59e0b;
+            background:#fff7ed;
+            box-shadow:0 0.9vh 2.2vh rgba(245,158,11,0.20);
+            transform:translateY(-0.45vh);
+        }
+
+        .task-card-top,
+        .stage-card-top {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1vw;
+        }
+
+        .task-number,
+        .stage-number {
+            font-size: 3.3vh;
+            font-weight: 900;
+            color: #0f3689;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+
+        .task-status,
+        .stage-status {
+            padding: 0.6vh 0.9vw;
+            border-radius: 999px;
+            background: #eaf2ff;
+            color: #0f3689;
+            font-size: 1.55vh;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .start-btn.finished .task-status,
+        .fusion-stage-card.finished .stage-status,
+        .task-status.done,
+        .stage-status.done {
+            background: #dcfce7;
+            color: #2e7d32;
+        }
+
+        .fusion-stage-card.active .stage-status {
+            background:#ffedd5;
+            color:#c2410c;
+        }
+
+        .task-card-main,
+        .stage-title {
+            position: relative;
+            z-index: 1;
+            margin-top: 1.4vh;
+            font-size: 2.8vh;
+            color: #1f2937;
+            font-weight: 900;
+            line-height: 1.25;
+            white-space: nowrap;
+        }
+
+        .task-card-desc,
+        .stage-desc {
+            position: relative;
+            z-index: 1;
+            margin-top: 0.8vh;
+            color: #667085;
+            font-size: 1.8vh;
+            line-height: 1.45;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .task-action {
+            position: relative;
+            z-index: 1;
+            align-self: flex-start;
+            margin-top: 1.4vh;
+            padding: 0.9vh 1.3vw;
+            border-radius: 1vh;
+            background: #0f3689;
+            color: #fff;
+            font-size: 1.65vh;
+            font-weight: 900;
+            box-shadow: 0 0.45vh 1vh rgba(15,54,137,0.18);
+            white-space: nowrap;
+        }
+
+        .start-btn.finished .task-action {
+            background: #2e7d32;
+        }
+
+        .fusion-wrapper { display: flex; flex-direction: column; flex: 1; height: 100%; gap: 1.6vh; min-height: 0; }
+
+        .stage-code { display: none; }
+
+        .stage-download {
+            position: relative;
+            z-index: 2;
+            display:none;
+            align-self: flex-start;
+            margin-top:1.2vh;
+            padding:0.95vh 1.25vw;
+            border:none;
+            border-radius:1vh;
+            background:#2e7d32;
+            color:#fff;
+            font-weight:900;
+            cursor:pointer;
+            font-size:1.6vh;
+            white-space: nowrap;
+        }
+
+        .flow-arrow, .flow-down-arrow { display:none; }
+        .fusion-main-btn { display: none; }
+        .fusion-emoji { font-size: 4vh; margin-bottom: 0; }
+        .fusion-text { font-size: 2.6vh; font-weight: bold; color: #0f3689; }
+
+        @media (max-width: 1100px) {
+            .sub-btn-grid, .fusion-stage-grid { gap: 1.4vh 1.2vw; }
+            .start-btn, .fusion-stage-card { min-height: 17vh; padding: 1.8vh 1.3vw; }
+            .task-card-main, .stage-title { font-size: 2.45vh; }
+            .task-card-desc, .stage-desc { font-size: 1.6vh; }
+        }
+
+        /* 弹窗与转场全自适应 */
+        #transition-overlay { display: none; position: fixed; inset: 0; background: white; z-index: 4000; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 5vh; overflow-y: auto; }
+        .inst-content { font-size: 4vh; font-weight: bold; color: #333; line-height: 1.7; }
+        #rope-input-area { background: #f0f4f8; padding: 4vh 4vw; border-radius: 2vh; border: 0.3vh solid #0f3689; text-align: left; margin-top: 4vh; }
+        .rope-label { font-size: 2.5vh; font-weight: bold; color: #0f3689; margin-right: 2vw; }
+        .rope-input { font-size: 2.5vh; padding: 1.5vh; width: 12vw; border-radius: 1vh; border: 0.2vh solid #ccc; text-align: center; }
+        #transition-next-btn { margin-top: 5vh; padding: 2vh 4vw; font-size: 2.5vh; font-weight: bold; background: #0f3689; color: white; border: none; border-radius: 1.5vh; cursor: pointer; box-shadow: 0 0.5vh 1.5vh rgba(15,54,137,0.3); transition: 0.2s; }
+
+        #experiment-container { display: none; position: fixed; inset: 0; background: #000; z-index: 3000; }
+        iframe { width: 100%; height: 100%; border: none; }
+
+        .volume-container { margin: 1.5vh 0; text-align: left; }
+        .volume-status { font-size: 1.8vh; color: #555; margin-bottom: 1vh; font-weight: bold; transition: color 0.3s;}
+        .volume-track { width: 100%; background: #eee; border-radius: 1vh; height: 2vh; overflow: hidden; border: 0.1vh solid #ccc; box-shadow: inset 0 0.1vh 0.3vh rgba(0,0,0,0.1); }
+        .volume-bar { width: 0%; height: 100%; background: #fca5a5; transition: width 0.1s, background 0.3s; }
+
+
+        /* 入口选择页：先选择静息态/心体融合，再进入登记与设备检查 */
+        #entry-select-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            background: linear-gradient(135deg, rgba(2,6,23,0.96) 0%, rgba(15,54,137,0.96) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            padding: 5vh 5vw;
+            text-align: center;
+        }
+
+        .entry-main-title {
+            font-size: 6vh;
+            font-weight: 900;
+            margin-bottom: 1.5vh;
+            letter-spacing: 0.15vw;
+            line-height: 1.2;
+        }
+
+        .entry-subtitle {
+            font-size: 2.4vh;
+            color: #dbeafe;
+            margin-bottom: 6vh;
+            font-weight: 600;
+        }
+
+        .entry-card-wrap {
+            display: flex;
+            gap: 4vw;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 1280px;
+        }
+
+        .entry-card {
+            width: 36vw;
+            min-width: 360px;
+            max-width: 520px;
+            height: 42vh;
+            min-height: 360px;
+            background: rgba(255,255,255,0.10);
+            border: 0.25vh solid rgba(255,255,255,0.38);
+            border-radius: 3vh;
+            box-shadow: 0 1vh 3vh rgba(0,0,0,0.28);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2vh;
+            cursor: pointer;
+            transition: 0.25s;
+            text-align: center;
+            padding: 4vh 3vw;
+        }
+
+        .entry-card:hover {
+            background: rgba(255,255,255,0.18);
+            border-color: #facc15;
+            transform: translateY(-0.8vh);
+            box-shadow: 0 1.5vh 3.5vh rgba(0,0,0,0.35);
+        }
+
+        .entry-emoji {
+            font-size: 9vh;
+            line-height: 1;
+        }
+
+        .entry-title {
+            font-size: 3.5vh;
+            font-weight: 900;
+            color: #fff;
+            line-height: 1.25;
+        }
+
+        .entry-desc {
+            max-width: 92%;
+            font-size: 1.95vh;
+            line-height: 1.65;
+            color: #dbeafe;
+        }
+
+        @media (max-width: 900px) {
+            .entry-card-wrap { flex-direction: column; gap: 3vh; }
+            .entry-card { width: 82vw; height: 32vh; min-height: 260px; }
+            .entry-main-title { font-size: 4.5vh; }
+            .entry-title { font-size: 3vh; }
+        }
+    </style>
+</head>
+<body>
+    <div id="secure-context-warning" style="display:none; position:fixed; top:0; left:0; right:0; z-index:99999; background:#b91c1c; color:#fff; padding:10px 16px; text-align:center; font-weight:bold; font-size:16px;"></div>
+
+<div id="entry-select-overlay">
+    <div class="entry-main-title">足球青训人才选拔 GSI 测评系统</div>
+    <div class="entry-subtitle">请选择本次进入的认知测评模块</div>
+
+    <div class="entry-card-wrap">
+        <div class="entry-card" onclick="chooseAssessmentEntrance('rest')">
+            <div class="entry-emoji">🧠</div>
+            <div class="entry-title">认知测评静息态模块</div>
+            <div class="entry-desc">
+                低体力消耗状态下完成基础认知测量：Flanker、Corsi、BELT、SART、足球决策和 MOT+DRT 1。
+            </div>
+        </div>
+
+        <div class="entry-card" onclick="chooseAssessmentEntrance('fusion')">
+            <div class="entry-emoji">🏃‍♂️🧠</div>
+            <div class="entry-title">认知测评心体融合模块</div>
+            <div class="entry-desc">
+                完成跳绳、MOT+DRT 2 和 MOT+DRT 3，用于考察体力消耗后的认知表现变化。
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id="login-overlay" style="display:none;">
+    <div class="login-box" id="step-recovery" style="display:none;">
+        <h2 style="color:#0f3689; margin-bottom:2vh; font-size: 3vh;">检测到未完成的测试进度</h2>
+        <div style="text-align: left; color: #555; font-size: 1.8vh; margin-bottom: 3vh; background: #f0f4f8; padding: 2vh; border-radius: 1vh; line-height: 1.6;">
+            系统发现您之前有未提交的测试记录。<br>
+            • 点击<b>【恢复进度】</b>将自动找回之前的文本数据并继续。<br>
+            • 如果上次中断发生在任务进行中，系统会进入锁定页，需要主试口令确认后从当前卡片开头重做。<br>
+        </div>
+        <button onclick="resumeCameraContext()" style="width:100%; padding:2vh; background:#0f3689; color:#fff; border:none; border-radius:1.5vh; font-size:2vh; cursor:pointer; font-weight:bold; margin-bottom:1.5vh;">✅ 恢复进度并开启设备</button>
+        <button onclick="abandonOldDataAndRestart()" style="width:100%; padding:2vh; background:#7f1d1d; color:#fff; border:none; border-radius:1.5vh; font-size:2vh; cursor:pointer; font-weight:bold;">放弃旧数据，使用新数据</button>
+    </div>
+
+    <div class="login-box" id="step-lock" style="display:none;">
+        <h2 style="color:#b91c1c; margin-bottom:2vh; font-size: 3vh;">任务已锁定</h2>
+        <div id="lock-detail" style="text-align:left; color:#333; font-size:1.8vh; margin-bottom:3vh; background:#fff7ed; border:0.2vh solid #fed7aa; padding:2vh; border-radius:1vh; line-height:1.8;"></div>
+        <input type="password" id="unlock-code" placeholder="主试解锁口令">
+        <button onclick="supervisorUnlockAndResume()" style="width:100%; padding:2vh; background:#b91c1c; color:#fff; border:none; border-radius:1.5vh; font-size:2vh; cursor:pointer; font-weight:bold; margin-top:1vh;">主试确认，从当前卡片开头重做</button>
+        <button onclick="abandonOldDataAndRestart()" style="width:100%; padding:1.6vh; background:#7f1d1d; color:#fff; border:none; border-radius:1.5vh; font-size:1.9vh; cursor:pointer; font-weight:bold; margin-top:1vh;">放弃旧数据，使用新数据</button>
+    </div>
+
+    <div class="login-box" id="step-1">
+        <h2 style="color:#0f3689; margin-bottom:3vh; font-size: 3.5vh;">系统元数据登记</h2>
+        <h4>受测者信息 (必填)</h4>
+        <input type="text" id="userName" placeholder="被试姓名">
+        <input type="tel" id="userPhone" placeholder="被试手机号" maxlength="11">
+        
+        <h4 style="margin-top: 2vh;">环境元数据 (选填，不填则使用默认值)</h4>
+        <input type="text" id="experimenterName" placeholder="主试姓名 (默认: 张书溢)">
+        <input type="text" id="deviceId" placeholder="设备编号 (默认: 02)">
+        <input type="text" id="cohortId" placeholder="测试批次 (默认: 余杭0515)">
+
+        <button onclick="requestCamera()" id="submit-btn" style="width:100%; padding:2vh; background:#0f3689; color:#fff; border:none; border-radius:1.5vh; font-size:2.2vh; cursor:pointer; font-weight:bold; margin-top:3vh;">进入系统与设备自检</button>
+    </div>
+    
+    <div class="login-box" id="step-2" style="display:none;">
+        <h2 style="color:#0f3689; margin-bottom:1.5vh; font-size: 3vh;">设备与环境自检</h2>
+        <video id="preview-video" autoplay muted></video>
+        <div class="volume-container">
+            <div class="volume-status" id="mic-status-text">🎙️ 请对着麦克风大声说话以解锁...</div>
+            <div class="volume-track"><div class="volume-bar" id="volume-bar"></div></div>
+        </div>
+        <button id="start-btn" onclick="enterApp()" disabled style="width:100%; padding:2vh; background:#aaa; color:#fff; border:none; border-radius:1.5vh; font-size:2.2vh; cursor:not-allowed; font-weight:bold; margin-top:1.5vh; transition: 0.3s;">请大声说话</button>
+    </div>
+</div>
+
+<div id="main-ui">
+    <div class="header">
+        <div style="display: flex; align-items: center; gap: 1vw;">
+            <img src="./zju-logo.png" class="header-logo" onerror="this.style.display='none'">
+            <h1 class="header-title">足球战术与认知综合评估系统</h1>
+            <span class="header-tag">智心项目组</span>
+        </div>
+        <div style="display: flex; gap: 1vw; align-items: center;">
+            <div id="user-display"></div>
+            <button id="download-btn" onclick="finalExport()">📥 打包下载数据</button>
+        </div>
+    </div>
+    
+    <div class="content-area">
+        <!-- 静息态模块：六宫格任务面板 -->
+        <div class="module-col" id="col-basic">
+            <div class="module-head">
+                <div class="module-title-wrap">
+                    <div class="module-title">模块 1：静息态测评</div>
+                    <div class="module-subtitle">六个任务均显示在本页，可按编号顺序完成，也可单独进入。</div>
+                </div>
+                <div class="module-chip">六任务 · 可单独保存</div>
+            </div>
+
+            <div class="rest-progress" aria-label="静息态任务顺序">
+                <div class="progress-step">01</div>
+                <div class="progress-step">02</div>
+                <div class="progress-step">03</div>
+                <div class="progress-step">04</div>
+                <div class="progress-step">05</div>
+                <div class="progress-step">06</div>
+            </div>
+
+            <div class="sub-btn-grid">
+                <div class="start-btn" id="btn-flanker" onclick="startSingle('Flanker')">
+                    <div class="task-card-top"><div class="task-number">01</div><div class="task-status">未开始</div></div>
+                    <div><div class="task-card-main">任务一</div><div class="task-card-desc">箭头判断</div></div>
+                    <div class="task-action">开始任务</div>
+                </div>
+                <div class="start-btn" id="btn-corsi" onclick="startSingle('Corsi')">
+                    <div class="task-card-top"><div class="task-number">02</div><div class="task-status">未开始</div></div>
+                    <div><div class="task-card-main">任务二</div><div class="task-card-desc">方块记忆</div></div>
+                    <div class="task-action">开始任务</div>
+                </div>
+                <div class="start-btn" id="btn-belt" onclick="startSingle('BELT')">
+                    <div class="task-card-top"><div class="task-number">03</div><div class="task-status">未开始</div></div>
+                    <div><div class="task-card-main">任务三</div><div class="task-card-desc">气球挑战</div></div>
+                    <div class="task-action">开始任务</div>
+                </div>
+                <div class="start-btn" id="btn-sart_pre" onclick="startSingle('SART_Pre')">
+                    <div class="task-card-top"><div class="task-number">04</div><div class="task-status">未开始</div></div>
+                    <div><div class="task-card-main">任务四</div><div class="task-card-desc">数字炸弹</div></div>
+                    <div class="task-action">开始任务</div>
+                </div>
+                <div class="start-btn" id="btn-soccer_pre" onclick="startSingle('Soccer_Pre')">
+                    <div class="task-card-top"><div class="task-number">05</div><div class="task-status">未开始</div></div>
+                    <div><div class="task-card-main">任务五</div><div class="task-card-desc">足球决策</div></div>
+                    <div class="task-action">开始任务</div>
+                </div>
+                <div class="start-btn" id="btn-mot1" onclick="startSingle('MOT1')">
+                    <div class="task-card-top"><div class="task-number">06</div><div class="task-status">未开始</div></div>
+                    <div><div class="task-card-main">任务六</div><div class="task-card-desc">追踪小球</div></div>
+                    <div class="task-action">开始任务</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 运动态模块：与静息态一致的 2×2 阶段面板 -->
+            <div id="rest-to-fusion-row" style="display:flex; justify-content:flex-end; margin-top:1.8vh;">
+                <button onclick="switchToFusionAfterRest()" style="border:none; border-radius:1vh; background:#0f3689; color:#fff; padding:1.2vh 1.6vw; font-size:1.8vh; font-weight:900; cursor:pointer;">静息态完成，进入运动态</button>
+            </div>
+
+        <div class="module-col" id="col-fusion">
+            <div class="module-head">
+                <div class="module-title-wrap">
+                    <div class="module-title">模块 2：心体融合测评</div>
+                    <div class="module-subtitle">六个卡片均可单独进入；已完成卡片会自动保存并锁定。</div>
+                </div>
+                <div style="display:flex; gap:0.8vw; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+                    <div class="module-chip">六卡片 · 单独保存</div>
+                    <button onclick="startSequence()" style="border:none; border-radius:1vh; background:#0f3689; color:#fff; padding:1vh 1.2vw; font-size:1.7vh; font-weight:900; cursor:pointer;">按顺序开始全部</button>
+                </div>
+            </div>
+
+            <div class="fusion-progress" aria-label="运动态阶段顺序">
+                <div class="progress-step">01</div>
+                <div class="progress-step">02</div>
+                <div class="progress-step">03</div>
+                <div class="progress-step">04</div>
+                <div class="progress-step">05</div>
+                <div class="progress-step">06</div>
+            </div>
+
+            <div class="fusion-wrapper">
+                <div class="fusion-stage-grid">
+                    <div class="fusion-stage-card" id="stage-exe1" onclick="startFusionStage('exe1')">
+                        <div class="stage-card-top"><div class="stage-number">01</div><div class="stage-status">未开始</div></div>
+                        <div><div class="stage-title">任务一</div><div class="stage-desc">匀速跳绳并记录次数</div></div>
+                        <div class="task-action">开始阶段</div>
+                        <button class="stage-download" id="download-exe1" onclick="downloadSegmentPackage('exe1'); event.stopPropagation();">下载本阶段</button>
+                    </div>
+                    <div class="fusion-stage-card" id="stage-cog1" onclick="startFusionStage('cog1')">
+                        <div class="stage-card-top"><div class="stage-number">02</div><div class="stage-status">未开始</div></div>
+                        <div><div class="stage-title">任务二</div><div class="stage-desc">第二段小球追踪</div></div>
+                        <div class="task-action">开始阶段</div>
+                        <button class="stage-download" id="download-cog1" onclick="downloadSegmentPackage('cog1'); event.stopPropagation();">下载本阶段</button>
+                    </div>
+                    <div class="fusion-stage-card" id="stage-exe2" onclick="startFusionStage('exe2')">
+                        <div class="stage-card-top"><div class="stage-number">03</div><div class="stage-status">未开始</div></div>
+                        <div><div class="stage-title">任务三</div><div class="stage-desc">匀速跳绳并记录次数</div></div>
+                        <div class="task-action">开始阶段</div>
+                        <button class="stage-download" id="download-exe2" onclick="downloadSegmentPackage('exe2'); event.stopPropagation();">下载本阶段</button>
+                    </div>
+                    <div class="fusion-stage-card" id="stage-cog2" onclick="startFusionStage('cog2')">
+                        <div class="stage-card-top"><div class="stage-number">04</div><div class="stage-status">未开始</div></div>
+                        <div><div class="stage-title">任务四</div><div class="stage-desc">第三段小球追踪</div></div>
+                        <div class="task-action">开始阶段</div>
+                        <button class="stage-download" id="download-cog2" onclick="downloadSegmentPackage('cog2'); event.stopPropagation();">下载本阶段</button>
+                    </div>
+                    <div class="fusion-stage-card" id="stage-sart_post" onclick="startFusionStage('sart_post')">
+                        <div class="stage-card-top"><div class="stage-number">05</div><div class="stage-status">未开始</div></div>
+                        <div><div class="stage-title">任务五</div><div class="stage-desc">数字反应任务</div></div>
+                        <div class="task-action">开始卡片</div>
+                        <button class="stage-download" id="download-sart_post" onclick="downloadSegmentPackage('sart_post'); event.stopPropagation();">下载本卡片</button>
+                    </div>
+                    <div class="fusion-stage-card" id="stage-soccer_post" onclick="startFusionStage('soccer_post')">
+                        <div class="stage-card-top"><div class="stage-number">06</div><div class="stage-status">未开始</div></div>
+                        <div><div class="stage-title">任务六</div><div class="stage-desc">足球判断任务</div></div>
+                        <div class="task-action">开始卡片</div>
+                        <button class="stage-download" id="download-soccer_post" onclick="downloadSegmentPackage('soccer_post'); event.stopPropagation();">下载本卡片</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<div id="transition-overlay">
+    <div class="inst-content" id="inst-text"></div>
+    <div id="rope-input-area" style="display:none;">
+        <div style="margin-bottom: 2.5vh; display: flex; align-items: center; justify-content: space-between;">
+            <label class="rope-label">跳绳时间 (秒): </label>
+            <input type="number" id="rope-time" class="rope-input" value="180">
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <label class="rope-label">跳绳次数 (个): </label>
+            <input type="number" id="rope-count" class="rope-input" placeholder="输入次数">
+        </div>
+    </div>
+    <button id="transition-next-btn" onclick="nextStep()">▼ 点击开始任务 ▼</button>
+</div>
+
+<div id="experiment-container"><iframe id="exp-iframe"></iframe></div>
+
+<script>
+function chooseAssessmentEntrance(mode) {
+    localStorage.setItem('assessment_entrance_mode', mode);
+
+    const entry = document.getElementById('entry-select-overlay');
+    const login = document.getElementById('login-overlay');
+
+    if (entry) entry.style.display = 'none';
+    if (login) login.style.display = 'flex';
+}
+
+function applyAssessmentEntranceMode() {
+    const mode = localStorage.getItem('assessment_entrance_mode') || 'rest';
+
+    const mainUI = document.getElementById('main-ui');
+    const contentArea = document.querySelector('.content-area');
+    const restCol = document.getElementById('col-basic');
+    const fusionCol = document.getElementById('col-fusion');
+    const restToFusionRow = document.getElementById('rest-to-fusion-row');
+
+    if (!mainUI || mainUI.style.display === 'none') return;
+
+    if (contentArea) {
+        contentArea.style.gridTemplateColumns = '1fr';
+    }
+
+    if (mode === 'rest') {
+        if (restCol) restCol.style.display = 'flex';
+        if (fusionCol) fusionCol.style.display = 'none';
+        if (restToFusionRow) restToFusionRow.style.display = 'flex';
+    }
+
+    if (mode === 'fusion') {
+        if (restCol) restCol.style.display = 'none';
+        if (fusionCol) fusionCol.style.display = 'flex';
+        if (restToFusionRow) restToFusionRow.style.display = 'none';
+    }
+}
+
+function switchToFusionAfterRest() {
+    const restIds = ['btn-flanker', 'btn-corsi', 'btn-belt', 'btn-sart_pre', 'btn-soccer_pre', 'btn-mot1'];
+    const unfinished = restIds.filter(id => {
+        const el = document.getElementById(id);
+        return !el || !el.classList.contains('finished');
+    });
+
+    if (unfinished.length > 0) {
+        alert('静息态还有 ' + unfinished.length + ' 个任务未完成。六个都完成后才能进入运动态。');
+        return;
+    }
+
+    localStorage.setItem('assessment_entrance_mode', 'fusion');
+    applyAssessmentEntranceMode();
+    window.scrollTo(0, 0);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const mainUI = document.getElementById('main-ui');
+
+    if (mainUI) {
+        const observer = new MutationObserver(() => {
+            applyAssessmentEntranceMode();
+        });
+
+        observer.observe(mainUI, {
+            attributes: true,
+            attributeFilter: ['style', 'class']
+        });
+    }
+
+    setInterval(applyAssessmentEntranceMode, 300);
+});
+
+// 被动缓存：只注册 service worker；不会弹出缓存界面，也不会阻塞任务。
+// 所有 paradigms 目录下的图片、视频、音频，第一次被正常请求后会写入浏览器缓存；后续优先从本地缓存读取。
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js?v=20260618-mot1-download-v5', { scope: './' })
+            .then(reg => console.log('[ServiceWorker] registered:', reg.scope))
+            .catch(err => console.warn('[ServiceWorker] register failed:', err));
+    });
+}
+</script>
+<script src="./main_controller.js?v=20260618-mot1-download-v5"></script>
+</body>
+</html>

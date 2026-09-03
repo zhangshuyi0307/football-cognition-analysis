@@ -1,0 +1,56 @@
+# macOS / editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+coverage/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+certs/
+*.pem
+*.key
+*.p12
+
+# Participant data and mutable server state
+allocations.json
+allocations.json.*
+data_server_backup/
+data_server_backup.*/
+
+# Historical ad-hoc backups
+*.bak
+*.bak-*
+*.bak_*
+*.testbak*
+
+# Large media and recorded uploads
+*.mp4
+*.webm
+*.mov
+*.avi
+
+# Runtime and temporary files
+*.log
+*.tmp
+*.tmp-*
+tmp/
+temp/
+
+# Archives and database dumps
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.sql
+*.sqlite
+*.sqlite3

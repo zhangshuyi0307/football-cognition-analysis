@@ -1,0 +1,21 @@
+{
+  "model": "Fast behavioural resource-pool proxy; not PMwG latent posterior",
+  "inputs": {
+    "mot": "F:\\足球实验数据\\分析输出\\PMwG_66人真实第二红框截止点输入_20260730\\PMwG_66人_MOT输入_沿用已质控.csv",
+    "drt": "F:\\足球实验数据\\分析输出\\PMwG_66人真实第二红框截止点输入_20260730\\PMwG_66人_DRT输入_真实截止点.csv",
+    "groups": "F:\\足球实验数据\\分析输出\\PMwG_66人真实第二红框截止点输入_20260730\\PMwG_66人_心率三组输入_沿用已质控.csv"
+  },
+  "n_subjects": 66,
+  "group_counts": {
+    "athlete": 21,
+    "nonathlete_high_hr": 23,
+    "nonathlete_low_hr": 22
+  },
+  "definitions": {
+    "z_mot": "MOT d-prime standardized within ball-count",
+    "z_drt": "mean of standardized DRT hit rate and negative standardized log RT within ball-count",
+    "G_lite": "(z_mot + z_drt) / 2",
+    "pi_MOT_lite": "z_mot - z_drt"
+  },
+  "separate_load_models": "Each of 1-5 balls has a separate group * stage, subject-cluster-robust model."
+}

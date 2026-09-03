@@ -1,0 +1,52 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>鏉╁€熼嚋鐏忓繒鎮嗘禒?- MOT+DRT</title>
+    <style>
+        * { user-select: none; touch-action: manipulation; box-sizing: border-box; caret-color: transparent !important; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', "Microsoft YaHei", sans-serif; background: #000; color: white; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        canvas { display: block; cursor: crosshair; }
+        #unified-instruction-overlay { position: fixed; inset: 0; background: #111; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 10px 40px; }
+        .header-area { width: 100%; max-width: 1200px; display: grid; grid-template-columns: 180px 1fr 180px; align-items: center; margin-bottom: 20px; }
+        .instruction-header { grid-column: 2; justify-self: center; text-align: center; font-size: 2rem; font-weight: bold; color: #4DA3FF; letter-spacing: 2px; margin: 0; }
+        .guide-nav-btn { padding: 12px 32px; font-size: 1.4rem; font-weight: bold; color: white; border: none; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+        .guide-prev-btn { grid-column: 1; justify-self: start; background: #64748b; }
+        .guide-next-btn { grid-column: 3; justify-self: end; background: #4DA3FF; }
+        .guide-prev-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .next-step-btn { padding: 12px 32px; font-size: 1.4rem; font-weight: bold; color: white; border: none; border-radius: 10px; cursor: pointer; transition: 0.2s; background: #4DA3FF; }
+        .images-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 1000px; margin-bottom: 30px; position: relative; }
+        .guide-img-wrapper { padding: 10px; border-radius: 16px; background: #222; transition: opacity 0.4s, transform 0.4s; opacity: 0.3; display: flex; justify-content: center; align-items: center;}
+        .guide-img-wrapper.active { opacity: 1; transform: scale(1.05); background: #2a2a2a; z-index: 5;}
+        .guide-img-wrapper img { max-height: 25vh; width: auto; max-width: 100%; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.6); display: block; }
+        #dynamic-red-box { position: absolute; border: 4px solid #FF3366; border-radius: 16px; pointer-events: none; transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 0 25px rgba(255, 51, 102, 0.5); display: none; z-index: 10; }
+        .subtitle-container { width: 100%; max-width: 1200px; background: #1a1a1a; border: 2px solid #333; border-radius: 15px; padding: 25px 40px; min-height: 140px; display: flex; align-items: center; justify-content: center; text-align: center; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
+        .subtitle-text { font-size: 1.6rem; line-height: 1.6; color: #eee; margin: 0; transition: opacity 0.3s; }
+        .simple-overlay { position: fixed; inset: 0; background: #000; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px; }
+        #confirm-btn { display: none; position: fixed; bottom: 28px; width: 340px; height: 84px; padding: 0 24px; font-size: 2rem; font-weight: bold; background: #4DA3FF; color: white; border: none; border-radius: 16px; cursor: pointer; z-index: 100; box-shadow: 0 4px 15px rgba(77,163,255,0.4); transition: 0.2s; text-align: center; line-height: 84px; white-space: nowrap; }
+        #confirm-btn:hover { background: #3a8de0; transform: translateY(-3px); }
+    </style>
+</head>
+<body>
+    <div id="unified-instruction-overlay">
+        <div class="header-area"><button class="guide-nav-btn guide-prev-btn" id="guide-prev-btn" type="button">&#19978;&#19968;&#27493;</button><div class="instruction-header">【追踪小球们】规则说明</div><button class="guide-nav-btn guide-next-btn next-step-btn" id="guide-next-btn" type="button">&#19979;&#19968;&#27493;</button></div>
+        <div class="images-grid" id="instruction-content">
+            <div id="dynamic-red-box"></div>
+            <div class="guide-img-wrapper" id="img-target-1"><img src="./instructions/mot_rulev1.png" onerror="this.style.display='none'"></div>
+            <div class="guide-img-wrapper" id="img-target-2"><img src="./instructions/mot_rulev2.png" onerror="this.style.display='none'"></div>
+            <div class="guide-img-wrapper" id="img-target-3"><img src="./instructions/mot_rulev3.png" onerror="this.style.display='none'"></div>
+            <div class="guide-img-wrapper" id="img-target-4"><img src="./instructions/mot_rulev4.png" onerror="this.style.display='none'"></div>
+        </div>
+        <div class="subtitle-container"><p class="subtitle-text" id="subtitle-text"></p></div>
+    </div>
+    <div id="app" style="width:100%; height:100%; display:none; flex-direction:column; justify-content:center; align-items:center;">
+        <canvas id="gameCanvas"></canvas>
+        <button id="confirm-btn">绾喛顓婚幓鎰唉</button>
+    </div>
+
+<script src="./mot_sequence.js?v=20260624-mot-stratified-noadj-drt2"></script>
+<script src="./mot.js?v=20260625-mot-practice-drt-pass"></script>
+</body>
+</html>
+
+
